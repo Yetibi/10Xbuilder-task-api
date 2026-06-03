@@ -11,6 +11,18 @@ const app = express();
 
 app.use(cors());
 app.use(express.json());
+app.use(express.static('public'));
+
+app.get('/', (req, res) => {
+  res.json({
+    message: 'Task API',
+    endpoints: {
+      health: 'GET /health',
+      tasks: 'GET /tasks',
+      docs: 'GET /docs'
+    }
+  });
+});
 
 app.get('/health', (req, res) => {
   res.json({ status: 'ok' });
@@ -23,6 +35,10 @@ const swaggerDocument = YAML.load(openapiContent);
 app.use('/docs', swaggerUi.serve, swaggerUi.setup(swaggerDocument as any));
 
 app.use('/tasks', tasksRouter);
+
+app.use((req, res) => {
+  res.status(404).json({ error: 'Route not found' });
+});
 
 app.use(errorHandler);
 

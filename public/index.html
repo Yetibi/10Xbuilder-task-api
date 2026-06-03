@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Task API - Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-50">
+  <div class="min-h-screen">
+    <!-- Header -->
+    <header class="bg-white shadow">
+      <div class="max-w-6xl mx-auto px-4 py-6">
+        <h1 class="text-3xl font-bold text-gray-900">📋 Task Manager</h1>
+        <p class="text-gray-600 text-sm">Gestión simple de tareas</p>
+      </div>
+    </header>
+
+    <main class="max-w-6xl mx-auto px-4 py-8">
+      <!-- Formulario -->
+      <div class="bg-white rounded-lg shadow p-6 mb-8">
+        <h2 class="text-2xl font-bold mb-4">Nueva Tarea</h2>
+        <form id="taskForm" class="space-y-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Título *</label>
+            <input type="text" id="titulo" required class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+            <textarea id="descripcion" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500" rows="3"></textarea>
+          </div>
+
+          <div class="grid grid-cols-2 gap-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+              <select id="estado" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <option value="pendiente">Pendiente</option>
+                <option value="en_progreso">En Progreso</option>
+                <option value="completada">Completada</option>
+              </select>
+            </div>
+
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+              <select id="prioridad" class="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500">
+                <option value="baja">Baja</option>
+                <option value="media" selected>Media</option>
+                <option value="alta">Alta</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="w-full bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition font-medium">
+            Crear Tarea
+          </button>
+        </form>
+      </div>
+
+      <!-- Filtros -->
+      <div class="bg-white rounded-lg shadow p-4 mb-6">
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Estado</label>
+            <select id="filterEstado" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+              <option value="">Todos</option>
+              <option value="pendiente">Pendiente</option>
+              <option value="en_progreso">En Progreso</option>
+              <option value="completada">Completada</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Filtrar por Prioridad</label>
+            <select id="filterPrioridad" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+              <option value="">Todos</option>
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lista de Tareas -->
+      <div class="bg-white rounded-lg shadow overflow-hidden">
+        <div class="px-6 py-4 border-b border-gray-200">
+          <h2 class="text-2xl font-bold">Tareas</h2>
+        </div>
+
+        <div id="tasksList" class="divide-y divide-gray-200">
+          <div class="px-6 py-8 text-center text-gray-500">
+            Cargando tareas...
+          </div>
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <!-- Modal Editar -->
+  <div id="editModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div class="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+      <h3 class="text-xl font-bold mb-4">Editar Tarea</h3>
+      <form id="editForm" class="space-y-4">
+        <input type="hidden" id="editId">
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Título</label>
+          <input type="text" id="editTitulo" class="w-full px-3 py-2 border border-gray-300 rounded-md">
+        </div>
+
+        <div>
+          <label class="block text-sm font-medium text-gray-700 mb-1">Descripción</label>
+          <textarea id="editDescripcion" class="w-full px-3 py-2 border border-gray-300 rounded-md" rows="2"></textarea>
+        </div>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Estado</label>
+            <select id="editEstado" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+              <option value="pendiente">Pendiente</option>
+              <option value="en_progreso">En Progreso</option>
+              <option value="completada">Completada</option>
+            </select>
+          </div>
+
+          <div>
+            <label class="block text-sm font-medium text-gray-700 mb-1">Prioridad</label>
+            <select id="editPrioridad" class="w-full px-3 py-2 border border-gray-300 rounded-md text-sm">
+              <option value="baja">Baja</option>
+              <option value="media">Media</option>
+              <option value="alta">Alta</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="flex gap-2 pt-4">
+          <button type="submit" class="flex-1 bg-blue-600 text-white py-2 rounded-md hover:bg-blue-700 transition text-sm font-medium">
+            Guardar
+          </button>
+          <button type="button" class="flex-1 bg-gray-300 text-gray-900 py-2 rounded-md hover:bg-gray-400 transition text-sm font-medium" onclick="closeEditModal()">
+            Cancelar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    const API_URL = 'http://localhost:3000/tasks';
+
+    // Cargar tareas al iniciar
+    loadTasks();
+
+    // Formulario crear tarea
+    document.getElementById('taskForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const task = {
+        titulo: document.getElementById('titulo').value,
+        descripcion: document.getElementById('descripcion').value,
+        estado: document.getElementById('estado').value,
+        prioridad: document.getElementById('prioridad').value
+      };
+
+      try {
+        const response = await fetch(API_URL, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(task)
+        });
+
+        if (response.ok) {
+          document.getElementById('taskForm').reset();
+          loadTasks();
+          alert('✅ Tarea creada exitosamente');
+        } else {
+          alert('❌ Error al crear la tarea');
+        }
+      } catch (error) {
+        console.error('Error:', error);
+        alert('❌ Error de conexión');
+      }
+    });
+
+    // Filtrar tareas
+    document.getElementById('filterEstado').addEventListener('change', loadTasks);
+    document.getElementById('filterPrioridad').addEventListener('change', loadTasks);
+
+    // Cargar tareas
+    async function loadTasks() {
+      const estado = document.getElementById('filterEstado').value;
+      const prioridad = document.getElementById('filterPrioridad').value;
+
+      let url = API_URL;
+      const params = new URLSearchParams();
+      if (estado) params.append('estado', estado);
+      if (prioridad) params.append('prioridad', prioridad);
+      if (params.toString()) url += '?' + params.toString();
+
+      try {
+        const response = await fetch(url);
+        const result = await response.json();
+        const tasks = result.data || [];
+
+        const tasksList = document.getElementById('tasksList');
+        if (tasks.length === 0) {
+          tasksList.innerHTML = '<div class="px-6 py-8 text-center text-gray-500">No hay tareas</div>';
+          return;
+        }
+
+        tasksList.innerHTML = tasks.map(task => `
+          <div class="px-6 py-4 hover:bg-gray-50 transition">
+            <div class="flex justify-between items-start">
+              <div class="flex-1">
+                <h3 class="font-semibold text-lg text-gray-900">${escapeHtml(task.titulo)}</h3>
+                ${task.descripcion ? `<p class="text-gray-600 text-sm mt-1">${escapeHtml(task.descripcion)}</p>` : ''}
+
+                <div class="flex gap-2 mt-3">
+                  <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${getEstadoColor(task.estado)}">
+                    ${task.estado}
+                  </span>
+                  <span class="inline-block px-2 py-1 text-xs font-medium rounded-full ${getPrioridadColor(task.prioridad)}">
+                    ${task.prioridad}
+                  </span>
+                </div>
+              </div>
+
+              <div class="flex gap-2 ml-4">
+                <button onclick="openEditModal('${task.id}')" class="text-blue-600 hover:text-blue-800 font-medium text-sm">
+                  ✏️ Editar
+                </button>
+                <button onclick="deleteTask('${task.id}')" class="text-red-600 hover:text-red-800 font-medium text-sm">
+                  🗑️ Eliminar
+                </button>
+              </div>
+            </div>
+          </div>
+        `).join('');
+      } catch (error) {
+        console.error('Error loading tasks:', error);
+        document.getElementById('tasksList').innerHTML = '<div class="px-6 py-8 text-center text-red-500">Error al cargar tareas</div>';
+      }
+    }
+
+    // Editar tarea
+    async function openEditModal(id) {
+      try {
+        const response = await fetch(`${API_URL}/${id}`);
+        const result = await response.json();
+        const task = result.data;
+
+        document.getElementById('editId').value = id;
+        document.getElementById('editTitulo').value = task.titulo;
+        document.getElementById('editDescripcion').value = task.descripcion || '';
+        document.getElementById('editEstado').value = task.estado;
+        document.getElementById('editPrioridad').value = task.prioridad;
+
+        document.getElementById('editModal').classList.remove('hidden');
+      } catch (error) {
+        alert('Error al cargar la tarea');
+      }
+    }
+
+    function closeEditModal() {
+      document.getElementById('editModal').classList.add('hidden');
+    }
+
+    document.getElementById('editForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const id = document.getElementById('editId').value;
+      const updates = {
+        titulo: document.getElementById('editTitulo').value,
+        descripcion: document.getElementById('editDescripcion').value,
+        estado: document.getElementById('editEstado').value,
+        prioridad: document.getElementById('editPrioridad').value
+      };
+
+      try {
+        const response = await fetch(`${API_URL}/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updates)
+        });
+
+        if (response.ok) {
+          closeEditModal();
+          loadTasks();
+          alert('✅ Tarea actualizada');
+        } else {
+          alert('❌ Error al actualizar');
+        }
+      } catch (error) {
+        alert('❌ Error de conexión');
+      }
+    });
+
+    // Eliminar tarea
+    async function deleteTask(id) {
+      if (!confirm('¿Eliminar tarea?')) return;
+
+      try {
+        const response = await fetch(`${API_URL}/${id}`, { method: 'DELETE' });
+
+        if (response.ok || response.status === 204) {
+          loadTasks();
+          alert('✅ Tarea eliminada');
+        } else {
+          alert('❌ Error al eliminar');
+        }
+      } catch (error) {
+        alert('❌ Error de conexión');
+      }
+    }
+
+    // Utilidades
+    function escapeHtml(text) {
+      const div = document.createElement('div');
+      div.textContent = text;
+      return div.innerHTML;
+    }
+
+    function getEstadoColor(estado) {
+      const colors = {
+        'pendiente': 'bg-yellow-100 text-yellow-800',
+        'en_progreso': 'bg-blue-100 text-blue-800',
+        'completada': 'bg-green-100 text-green-800'
+      };
+      return colors[estado] || 'bg-gray-100 text-gray-800';
+    }
+
+    function getPrioridadColor(prioridad) {
+      const colors = {
+        'baja': 'bg-gray-100 text-gray-800',
+        'media': 'bg-orange-100 text-orange-800',
+        'alta': 'bg-red-100 text-red-800'
+      };
+      return colors[prioridad] || 'bg-gray-100 text-gray-800';
+    }
+  </script>
+</body>
+</html>
