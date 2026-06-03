@@ -19,13 +19,15 @@ export const getAll = async (req: Request, res: Response): Promise<void> => {
     const { data, error } = await query.order('created_at', { ascending: false });
 
     if (error) {
-      res.status(400).json({ error: error.message });
+      console.error('Supabase error:', error);
+      res.status(400).json({ error: error.message, details: JSON.stringify(error) });
       return;
     }
 
     res.json({ data });
   } catch (err: any) {
-    res.status(500).json({ error: err.message });
+    console.error('Controller error:', err);
+    res.status(500).json({ error: err.message, details: err.stack });
   }
 };
 
