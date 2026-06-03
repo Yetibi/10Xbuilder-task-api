@@ -1,0 +1,360 @@
+openapi: 3.0.0
+info:
+  title: 10XBuilder Task API
+  description: A simple REST API for managing tasks with full CRUD operations
+  version: 1.0.0
+  author: Oscar Barajas
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://api.example.com
+    description: Production server (update URL as needed)
+
+paths:
+  /health:
+    get:
+      summary: Health check
+      description: Returns the health status of the API
+      tags:
+        - Health
+      responses:
+        '200':
+          description: API is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: ok
+
+  /tasks:
+    get:
+      summary: List all tasks
+      description: Retrieve all tasks with optional filtering by status and priority
+      tags:
+        - Tasks
+      parameters:
+        - name: estado
+          in: query
+          schema:
+            type: string
+            enum: [pendiente, en_progreso, completada]
+          description: Filter tasks by status
+        - name: prioridad
+          in: query
+          schema:
+            type: string
+            enum: [baja, media, alta]
+          description: Filter tasks by priority
+      responses:
+        '200':
+          description: List of tasks
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    post:
+      summary: Create a new task
+      description: Create a new task with the provided information
+      tags:
+        - Tasks
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateTaskInput'
+            examples:
+              basicTask:
+                summary: Basic task with only title
+                value:
+                  titulo: "Buy groceries"
+              fullTask:
+                summary: Task with all optional fields
+                value:
+                  titulo: "Complete project report"
+                  descripcion: "Finish the quarterly report for Q4"
+                  estado: "en_progreso"
+                  prioridad: "alta"
+      responses:
+        '201':
+          description: Task created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad request (invalid input or missing required fields)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /tasks/{id}:
+    get:
+      summary: Get a task by ID
+      description: Retrieve a specific task by its ID
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the task
+      responses:
+        '200':
+          description: Task found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    patch:
+      summary: Update a task partially
+      description: Update one or more fields of an existing task
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the task to update
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateTaskInput'
+            examples:
+              updateStatus:
+                summary: Update only the status
+                value:
+                  estado: "completada"
+              updateMultiple:
+                summary: Update multiple fields
+                value:
+                  titulo: "New task title"
+                  estado: "en_progreso"
+                  prioridad: "media"
+      responses:
+        '200':
+          description: Task updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Task'
+        '400':
+          description: Bad request (no fields to update)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+    delete:
+      summary: Delete a task
+      description: Delete an existing task by its ID
+      tags:
+        - Tasks
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The unique identifier of the task to delete
+      responses:
+        '204':
+          description: Task deleted successfully (no content)
+        '404':
+          description: Task not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+components:
+  schemas:
+    Task:
+      type: object
+      required:
+        - id
+        - titulo
+        - estado
+        - prioridad
+        - created_at
+        - updated_at
+      properties:
+        id:
+          type: string
+          format: uuid
+          description: Unique identifier for the task
+          example: "123e4567-e89b-12d3-a456-426614174000"
+        titulo:
+          type: string
+          description: Title of the task
+          example: "Buy groceries"
+        descripcion:
+          type: string
+          nullable: true
+          description: Optional detailed description of the task
+          example: "Milk, eggs, bread, and butter"
+        estado:
+          type: string
+          enum: [pendiente, en_progreso, completada]
+          description: Current status of the task
+          example: "pendiente"
+        prioridad:
+          type: string
+          enum: [baja, media, alta]
+          description: Priority level of the task
+          example: "media"
+        created_at:
+          type: string
+          format: date-time
+          description: When the task was created
+          example: "2024-01-15T10:30:00Z"
+        updated_at:
+          type: string
+          format: date-time
+          description: When the task was last updated
+          example: "2024-01-15T10:30:00Z"
+
+    CreateTaskInput:
+      type: object
+      required:
+        - titulo
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          description: Title of the task (required)
+          example: "Buy groceries"
+        descripcion:
+          type: string
+          nullable: true
+          description: Optional detailed description
+          example: "Milk, eggs, bread"
+        estado:
+          type: string
+          enum: [pendiente, en_progreso, completada]
+          default: pendiente
+          description: Initial status of the task (defaults to 'pendiente')
+          example: "pendiente"
+        prioridad:
+          type: string
+          enum: [baja, media, alta]
+          default: media
+          description: Priority level (defaults to 'media')
+          example: "media"
+
+    UpdateTaskInput:
+      type: object
+      minProperties: 1
+      properties:
+        titulo:
+          type: string
+          minLength: 1
+          description: Updated title
+          example: "Buy groceries and cook dinner"
+        descripcion:
+          type: string
+          nullable: true
+          description: Updated description
+          example: "Updated shopping list"
+        estado:
+          type: string
+          enum: [pendiente, en_progreso, completada]
+          description: Updated status
+          example: "completada"
+        prioridad:
+          type: string
+          enum: [baja, media, alta]
+          description: Updated priority
+          example: "alta"
+
+    Error:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+          example: "Task not found"
+        message:
+          type: string
+          description: Additional error details
+          example: "Task not found"
